@@ -12,7 +12,7 @@ parser.add_argument('--save_dir',
         help='path to where any checkpoints will be stored',
         default='./')
 parser.add_argument('--arch',
-        choices=['vgg19', 'vgg12'],
+        choices=['vgg19', 'densenet161', 'resnet34'],
         help='network architecture',
         default='vgg19')
 parser.add_argument('--learning_rate',
