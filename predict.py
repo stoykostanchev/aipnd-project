@@ -36,8 +36,8 @@ with open(args.category_names, 'r') as f:
 
 checkpoint = torch.load(path)
 
-print(checkpoint['epochs'])
 idx_to_class = {v: k for k, v in checkpoint['class_to_idx'].items()}
 
 for i in range(0, len(probs)):
-    print(probs[i], classes[i], idx_to_class.get(classes[i]), cat_to_name.get(str(classes[i])))
+    print(probs[i], cat_to_name.get(str(classes[i])))
+

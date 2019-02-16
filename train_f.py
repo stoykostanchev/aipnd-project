@@ -79,6 +79,6 @@ def train(data_dir, cat_to_name, save_dir=None, lr=0.001, arch='vgg19', max_epoc
         model.train()
             
         if  e >= epochs:
-            save_checkpoint(model, e, optimizer, cat_to_name, image_datasets['train'].class_to_idx)
+            save_checkpoint(model, e, optimizer, cat_to_name, image_datasets['train'].class_to_idx, arch=arch)
 
     print("Training complete")

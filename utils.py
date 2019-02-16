@@ -53,7 +53,7 @@ def freeze_params(model):
         param.requires_grad = False
     return model
 
-def save_checkpoint(model, epochs, optimizer, cat_to_name, class_to_idx, path=None):
+def save_checkpoint(model, epochs, optimizer, cat_to_name, class_to_idx, arch, path=None):
     print('Saving model')
     path = get_checkpoints_path(path)
     print('Path:', path)
@@ -68,6 +68,7 @@ def save_checkpoint(model, epochs, optimizer, cat_to_name, class_to_idx, path=No
         'class_to_idx': class_to_idx,
         'cat_to_name' : cat_to_name,
         'epochs': epochs,
+        'arch': arch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         # The last layer is a transform, we can get the count of outputs from the one before it
@@ -95,7 +96,7 @@ def get_saved_model(checkpoint_path=None, arch='vgg19', hidden_units=4096, gpu=N
         device = get_device(gpu)
         checkpoint = torch.load(get_checkpoints_path(checkpoint_path), map_location=str(device))
         print('- Loaded model from a checkpoint -')
-        model = get_model(arch, hidden_units, checkpoint['classes'])
+        model = get_model(checkpoint['arch'], hidden_units, checkpoint['classes'])
         model.load_state_dict(checkpoint['model_state_dict'])
     except:    
         _, image_datasets, _ = data_utils.get_data(data_dir)
