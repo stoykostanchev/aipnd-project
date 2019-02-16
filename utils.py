@@ -17,9 +17,29 @@ def get_checkpoints_path(path = None):
 
 def get_custom_classifier(model, hidden_units, classes):
     # ======== Define customer classifier ===
+    # SqueezeNet / alexnet and similar, where the classifier starts with a dropout, are not supported atm
+    input_features = None
     output_classes_count = classes
-    input_features = model.classifier[0].in_features # vgg19 = 25088
 
+    if hasattr(model, 'classifier'):
+        mn = model.classifier.__class__.__name__
+
+        if mn == 'Linear': # densenet
+            input_features = model.classifier.in_features
+        else:
+            if mn == 'Sequential': # vgg16
+                l1 = model.classifier[0]
+                
+                # only use in_features if the first layer in the classifier has such a prop
+                if hasattr(l1, 'in_features'):
+                    input_features = l1.in_features
+
+    else:
+        if hasattr(model, 'fc'): # resnet34, inception_v3
+            input_features = model.fc.in_features
+
+    print('- Input features: -', input_features)
+    
     return torch.nn.Sequential(OrderedDict([
       ('fc1', torch.nn.Linear(input_features, hidden_units)),
       ('relu', torch.nn.ReLU()),
@@ -35,7 +55,15 @@ def freeze_params(model):
 
 def save_checkpoint(model, epochs, optimizer, cat_to_name, class_to_idx, path=None):
     print('Saving model')
-
+    path = get_checkpoints_path(path)
+    print('Path:', path)
+    
+    classes = None
+    
+    if hasattr(model, 'classifier'):
+        classes = model.classifier[len(model.classifier) - 2].out_features
+    else:
+        classes = model.fc[len(model.classifier) - 2].out_features
     torch.save({
         'class_to_idx': class_to_idx,
         'cat_to_name' : cat_to_name,
@@ -43,23 +71,24 @@ def save_checkpoint(model, epochs, optimizer, cat_to_name, class_to_idx, path=No
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         # The last layer is a transform, we can get the count of outputs from the one before it
-        'classes': model.classifier[len(model.classifier) - 2].out_features
-    }, get_checkpoints_path(path))
+        'classes': classes
+    }, path)
 
-model_cached = None
+
 def get_model(arch, hidden_units, classes):
-    global model_cached
-    if model_cached != None:
-        return model_cached
+    model = freeze_params(torchvision.models.__dict__[arch](pretrained=True))
+    classifier = get_custom_classifier(model, hidden_units, classes)
+    if hasattr(model, 'classifier'):
+        model.classifier = classifier
+    else:
+        if hasattr(model, 'fc'):
+            model.fc = classifier
     
-    model = freeze_params(torchvision.models.vgg19(pretrained='imagenet'))
-    model.classifier = get_custom_classifier(model, hidden_units, classes)
-    model_cached = model
     return model
 
 def get_saved_model(checkpoint_path=None, arch='vgg19', hidden_units=4096, gpu=None, data_dir=None):
     if data_dir == None:
-        data_dir = 'flowers' # this DS has 102 classes 
+        data_dir = 'flowers' # this DS has 102 classes
 
 
     try:
