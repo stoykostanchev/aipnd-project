@@ -10,7 +10,10 @@ def train(data_dir, cat_to_name, save_dir=None, lr=0.001, arch='vgg19', max_epoc
 
     device = get_device(gpu)
     model.to(device)
-    optimizer = torch.optim.Adam(model.classifier.parameters(), lr=lr)
+    if hasattr(model, 'classifier'):
+        optimizer = torch.optim.Adam(model.classifier.parameters(), lr=lr)
+    else:
+        optimizer = torch.optim.Adam(model.fc.parameters(), lr=lr)
 
     try:
         checkpoint = torch.load(get_checkpoints_path(save_dir + 'state.pt'), map_location=str(device))
@@ -36,7 +39,7 @@ def train(data_dir, cat_to_name, save_dir=None, lr=0.001, arch='vgg19', max_epoc
 
     for e in range(max_epochs):
         for ii, (inputs, labels) in enumerate(dataloaders['train']):
-            if e+1 <= epochs:
+            if e < epochs:
                 # Skipping data that we've already used and trained upon
                 continue
 
@@ -66,15 +69,16 @@ def train(data_dir, cat_to_name, save_dir=None, lr=0.001, arch='vgg19', max_epoc
                 correct = 0
                 total = 0
         
-        if  e > epochs:
-            model.eval()
-            print("Evaluating epoch {} ... ".format(e+1))
-            acc, loss = evaluate_model(dataloaders['valid'], model, criterion)
-            print(
-              "Validation loss: {:.4f} ...".format(loss),
-              "Validation accuracy: %d %%" % (acc)
-             )
-            model.train()
+        model.eval()
+        print("Evaluating epoch {} ... ".format(e+1))
+        acc, loss = evaluate_model(dataloaders['valid'], model, criterion)
+        print(
+          "Validation loss: {:.4f} ...".format(loss),
+          "Validation accuracy: %d %%" % (acc)
+        )
+        model.train()
+            
+        if  e >= epochs:
             save_checkpoint(model, e, optimizer, cat_to_name, image_datasets['train'].class_to_idx)
 
     print("Training complete")

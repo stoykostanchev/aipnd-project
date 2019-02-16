@@ -27,11 +27,11 @@ def get_custom_classifier(model, hidden_units, classes):
         if mn == 'Linear': # densenet
             input_features = model.classifier.in_features
         else:
-            if mn == 'Sequential': # vgg16
+            if mn == 'Sequential': # vgg16                
                 l1 = model.classifier[0]
                 
-                # only use in_features if the first layer in the classifier has such a prop
-                if hasattr(l1, 'in_features'):
+                # only use in_features if the first layer in the classifier has such a prop     
+                if hasattr(l1, 'in_features'):              
                     input_features = l1.in_features
 
     else:
@@ -63,7 +63,7 @@ def save_checkpoint(model, epochs, optimizer, cat_to_name, class_to_idx, path=No
     if hasattr(model, 'classifier'):
         classes = model.classifier[len(model.classifier) - 2].out_features
     else:
-        classes = model.fc[len(model.classifier) - 2].out_features
+        classes = model.fc[len(model.fc) - 2].out_features
     torch.save({
         'class_to_idx': class_to_idx,
         'cat_to_name' : cat_to_name,
@@ -88,7 +88,7 @@ def get_model(arch, hidden_units, classes):
 
 def get_saved_model(checkpoint_path=None, arch='vgg19', hidden_units=4096, gpu=None, data_dir=None):
     if data_dir == None:
-        data_dir = 'flowers' # this DS has 102 classes
+        data_dir = 'flowers' # this DS has 102 classes 
 
 
     try:
